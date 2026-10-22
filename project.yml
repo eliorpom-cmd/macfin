@@ -1,0 +1,51 @@
+name: Macfin
+options:
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Macfin:
+    type: application
+    platform: macOS
+    sources: [Macfin]
+    # Signing lives in Config/Signing.xcconfig, which optionally includes the untracked
+    # Config/Local.xcconfig. Without it the app builds ad hoc, no Apple account needed.
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
+    info:
+      path: Macfin/Info.plist
+      properties:
+        CFBundleDisplayName: Macfin
+        CFBundleName: Macfin
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, fr]
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.entertainment
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    entitlements:
+      path: Macfin/Macfin.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+    settings:
+      base:
+        # Change this to your own reverse-DNS identifier if you ship your own build.
+        PRODUCT_BUNDLE_IDENTIFIER: dev.byelior.macfin
+        PRODUCT_NAME: Macfin
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

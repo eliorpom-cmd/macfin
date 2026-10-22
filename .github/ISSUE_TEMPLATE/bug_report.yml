@@ -1,0 +1,42 @@
+name: Bug report
+description: Something in Macfin doesn’t work as expected.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a movie
+        2. Click Play
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: macfin
+    attributes:
+      label: Macfin version or commit
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+    validations:
+      required: true
+  - type: input
+    id: jellyfin
+    attributes:
+      label: Jellyfin server version
+  - type: textarea
+    id: media
+    attributes:
+      label: Media file
+      description: For playback issues, the container and codecs (for example from Jellyfin’s Media Info).

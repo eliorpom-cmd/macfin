@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest an idea for Macfin.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you’re trying to do
+      description: The situation and what gets in your way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How Macfin could help. Screenshots or sketches are welcome.

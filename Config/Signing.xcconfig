@@ -1,0 +1,8 @@
+// Default signing: ad hoc, so anyone can build and run Macfin without an Apple developer account.
+// To sign with your own team (for example with a Developer ID certificate), copy
+// Local.xcconfig.example to Local.xcconfig and fill it in. Local.xcconfig is ignored by git.
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"
