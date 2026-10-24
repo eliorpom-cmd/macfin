@@ -18,3 +18,4 @@ Config/Local.xcconfig
 
 # macOS
 .DS_Store
+dist/

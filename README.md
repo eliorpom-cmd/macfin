@@ -36,7 +36,17 @@ Keyboard: Space plays or pauses, ← and → skip 10 seconds, F toggles full scr
 
 ## Installation
 
-There’s no signed download yet: build Macfin from source.
+With [Homebrew](https://brew.sh):
+
+```bash
+brew install --cask eliorpom-cmd/tap/macfin
+```
+
+Or download `Macfin-<version>.zip` from the [latest release](https://github.com/eliorpom-cmd/macfin/releases/latest),
+unzip it and move Macfin to Applications. Releases are signed with a Developer ID and notarized by Apple, and run
+on Apple silicon and Intel Macs with macOS 26 or later.
+
+### Building from source
 
 ```bash
 brew install xcodegen
@@ -59,7 +69,8 @@ cp Config/Local.xcconfig.example Config/Local.xcconfig   # ignored by git
 ```
 
 If you distribute your own build, also change `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml`
-(`dev.byelior.macfin` belongs to the original author).
+(`dev.byelior.macfin` belongs to the original author). `scripts/release.sh` builds the signed, notarized zip of a
+release.
 
 ## Known limitations
 
@@ -69,7 +80,6 @@ If you distribute your own build, also change `PRODUCT_BUNDLE_IDENTIFIER` in `pr
 - **No subtitle or audio track picker.** The file’s default tracks are used.
 - **Plain HTTP only on the local network.** App Transport Security allows `http://` for local addresses; a remote
   server needs `https://`.
-- **Not notarized.** No signed build is published yet.
 - Dark appearance only, by design.
 
 ## Development
