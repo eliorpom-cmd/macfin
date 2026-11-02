@@ -62,6 +62,8 @@ struct RootView: View {
             // would also remove the window's traffic lights on macOS 26.
             if let playback = model.playback {
                 PlayerScreen(playback: playback)
+                    // One view per session: reusing the previous one kept its video layer on the stopped player.
+                    .id(ObjectIdentifier(playback))
                     .transition(.page)
                     .zIndex(1)
             } else {

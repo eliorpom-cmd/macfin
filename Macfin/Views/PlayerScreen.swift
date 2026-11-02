@@ -323,5 +323,15 @@ struct VideoSurface: NSViewRepresentable {
         return view
     }
 
-    func updateNSView(_ view: VideoView, context: Context) { view.onDoubleClick = onDoubleClick }
+    func updateNSView(_ view: VideoView, context: Context) {
+        view.onDoubleClick = onDoubleClick
+        // Same view handed a new session (next episode): attach the layer to the new player.
+        if let layer = view.layer as? AVPlayerLayer, layer.player !== playback.player {
+            layer.player = playback.player
+            if AVPictureInPictureController.isPictureInPictureSupported() {
+                let pip = AVPictureInPictureController(playerLayer: layer)
+                DispatchQueue.main.async { playback.pictureInPicture = pip }
+            }
+        }
+    }
 }
