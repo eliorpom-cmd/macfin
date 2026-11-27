@@ -18,7 +18,8 @@ in any other Jellyfin app.
   and a Next Episode button in the player.
 - **Search and sort**: filter by title, sort by title, date added, or year.
 - **Player**: a bare video surface with a small glass control bar: play/pause, 10-second skips, speed from 0.5× to 2×,
-  picture in picture, and full screen. The controls hide after 2.5 seconds of playback.
+  audio track and subtitle pickers for the tracks inside the file, picture in picture, and full screen. The next
+  episode keeps the audio and subtitle languages you picked. The controls hide after 2.5 seconds of playback.
 - **Scrubbing preview**: hover the timeline to see a thumbnail of that moment, from Jellyfin’s trickplay images.
 - **Progress sync**: Macfin reports your position every 10 seconds, on pause, and when you quit, so Swiftfin or the
   web app resume where you stopped. Mark a movie as watched or unwatched from its details page or its context menu.
@@ -77,7 +78,6 @@ release.
 - **Direct play only.** Macfin streams the original file and never asks Jellyfin to transcode. A movie plays when
   AVFoundation can read it: MP4 or MOV with H.264 or HEVC video. MKV, AVI, and most WebM files won’t play.
 - **Movies and TV shows only.** No music or live TV.
-- **No subtitle or audio track picker.** The file’s default tracks are used.
 - **Plain HTTP only on the local network.** App Transport Security allows `http://` for local addresses; a remote
   server needs `https://`.
 - Dark appearance only, by design.

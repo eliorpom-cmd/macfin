@@ -61,6 +61,16 @@
         }
       }
     },
+    "Audio": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio"
+          }
+        }
+      }
+    },
     "Back": {
       "localizations": {
         "fr": {
@@ -300,6 +310,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucun film"
+          }
+        }
+      }
+    },
+    "Off": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Désactivés"
           }
         }
       }
@@ -550,6 +570,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Depuis le début"
+          }
+        }
+      }
+    },
+    "Subtitles": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sous-titres"
           }
         }
       }
