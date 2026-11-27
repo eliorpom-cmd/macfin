@@ -86,10 +86,11 @@ Code: `Macfin/DesignSystem/Components.swift`
 ### Player (modeled on QuickTime Player)
 - **Title bar**: 28 pt `titleBar` veil (black 55%, `Size.titleBar`), `hairline` bottom border, centered 13 pt semibold `text2` title, window buttons; hidden in full screen.
 - **Control bar**: 440 pt (`Size.controlBar`), `.glassEffect(.regular)`, 20 pt radius (`Radius.controlBar`), 24 pt from the bottom.
-  Row 1: back to library, full screen | play/pause 22 pt | picture in picture, speed (0.5× to 2×), next episode (only for an episode that has one). 14 pt semibold icons.
+  Row 1: back to library, full screen | play/pause 22 pt | picture in picture, audio (only with 2 or more audio tracks), subtitles (only with at least 1 subtitle track), speed (0.5× to 2×), next episode (only for an episode that has one). 14 pt semibold icons.
   Row 2: elapsed time · white `.small` slider · time left, 11 pt tabular digits in `text2`.
 - **Preview**: while hovering or dragging the slider, a 192 pt Jellyfin trickplay thumbnail (`Size.preview`), 8 pt radius, `hairline` border, time underneath, centered on the hovered point.
 - **Speed**: popover listing 2× → 0.5×, checkmark on the current speed; the bar stays visible while the popover is open or the pointer is over the bar.
+- **Audio and subtitles** (`speaker.wave.2`, `captions.bubble`): same popover and rows as the speed menu, listing the file's tracks by their AVFoundation name, checkmark on the current one; subtitles start with "Off". Rows are at least 96 pt and widen to the longest name instead of truncating. The next episode keeps the chosen languages.
 - Play/pause: the icon changes instantly, without animation.
 - No volume control (the Mac's keys do that), no AVKit controls (a bare `AVPlayerLayer` surface drives picture in picture).
 - Everything hides after 2.5 s of playback without movement, pointer included; always visible when paused.

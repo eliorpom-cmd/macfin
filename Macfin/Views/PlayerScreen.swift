@@ -99,7 +99,7 @@ private struct TitleBar: View {
     }
 }
 
-/// Compact glass bar: back, full screen | play/pause | picture in picture, speed — then the scrubber.
+/// Compact glass bar: back, full screen | play/pause | picture in picture, audio, subtitles, speed — then the scrubber.
 struct PlayerControls: View {
     @Bindable var playback: PlaybackSession
     @Binding var pinned: Bool
@@ -108,6 +108,8 @@ struct PlayerControls: View {
     @State private var scrubbing: Double?
     @State private var hovering = false
     @State private var speedOpen = false
+    @State private var audioOpen = false
+    @State private var subtitleOpen = false
     @State private var sliderFrame: CGRect = .zero
     @State private var hoverX: CGFloat?
 
@@ -120,6 +122,8 @@ struct PlayerControls: View {
                     Spacer()
                     icon("pip.enter", help: "Picture in Picture") { playback.togglePictureInPicture() }
                         .disabled(playback.pictureInPicture == nil)
+                    if playback.audioOptions.count >= 2 { audioMenu }
+                    if !playback.subtitleOptions.isEmpty { subtitleMenu }
                     speedMenu
                     if playback.next != nil {
                         icon("forward.end.fill", help: "Next Episode") { Task { await AppModel.shared.playNext() } }
@@ -160,9 +164,12 @@ struct PlayerControls: View {
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Tokens.Radius.controlBar))
         .coordinateSpace(.named("controlBar"))
         .overlay(alignment: .topLeading) { preview }
-        .onHover { hovering = $0; pinned = hovering || speedOpen }
-        .onChange(of: speedOpen) { _, open in pinned = hovering || open }
+        .onHover { hovering = $0; pinned = hovering || menuOpen }
+        .onChange(of: menuOpen) { _, open in pinned = hovering || open }
     }
+
+    /// The bar stays visible while one of its popovers is open.
+    private var menuOpen: Bool { speedOpen || audioOpen || subtitleOpen }
 
     /// Time under the pointer (or being scrubbed), for the thumbnail preview.
     private var previewTime: Double? {
@@ -220,6 +227,58 @@ struct PlayerControls: View {
             }
             .padding(6)
         }
+    }
+
+    private var audioMenu: some View {
+        icon("speaker.wave.2", help: "Audio") { audioOpen.toggle() }
+            .popover(isPresented: $audioOpen, arrowEdge: .top) {
+                trackList {
+                    ForEach(playback.audioOptions, id: \.self) { option in
+                        trackRow(Text(verbatim: option.displayName), checked: option == playback.audio) {
+                            playback.selectAudio(option); audioOpen = false
+                        }
+                    }
+                }
+            }
+    }
+
+    private var subtitleMenu: some View {
+        icon("captions.bubble", help: "Subtitles") { subtitleOpen.toggle() }
+            .popover(isPresented: $subtitleOpen, arrowEdge: .top) {
+                trackList {
+                    trackRow(Text("Off"), checked: playback.subtitle == nil) {
+                        playback.selectSubtitle(nil); subtitleOpen = false
+                    }
+                    ForEach(playback.subtitleOptions, id: \.self) { option in
+                        trackRow(Text(verbatim: option.displayName), checked: option == playback.subtitle) {
+                            playback.selectSubtitle(option); subtitleOpen = false
+                        }
+                    }
+                }
+            }
+    }
+
+    /// Popover column sized to its longest row, so track names are never cut.
+    private func trackList<Rows: View>(@ViewBuilder rows: () -> Rows) -> some View {
+        VStack(spacing: 2) { rows() }
+            .fixedSize(horizontal: true, vertical: false)
+            .padding(6)
+    }
+
+    /// Same row as the speed menu, at least as wide, and wider when the name needs it.
+    private func trackRow(_ label: Text, checked: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                label.lineLimit(1)
+                Spacer(minLength: 8)
+                if checked { Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)) }
+            }
+            .font(.system(size: 13, weight: .medium))
+            .padding(.horizontal, 10)
+            .frame(minWidth: 96, maxWidth: .infinity, minHeight: 26, maxHeight: 26)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func icon(_ symbol: String, help: LocalizedStringKey, action: @escaping () -> Void) -> some View {

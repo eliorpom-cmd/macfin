@@ -136,19 +136,21 @@ final class AppModel {
 
     // MARK: Playback
 
-    func play(_ item: Item, fromStart: Bool = false) {
+    func play(_ item: Item, fromStart: Bool = false, languages: TrackLanguages = TrackLanguages()) {
         guard let client, playback == nil else { return }
         let item = current(item)
-        let session = PlaybackSession(item: item, client: client, startTicks: fromStart ? 0 : item.positionTicks)
+        let session = PlaybackSession(item: item, client: client, startTicks: fromStart ? 0 : item.positionTicks, languages: languages)
         withAnimation(Tokens.Motion.page) { playback = session }
         if item.isEpisode { Task { session.next = await episode(after: item) } }
     }
 
-    /// Ends the current episode and starts the following one from its beginning.
+    /// Ends the current episode and starts the following one from its beginning,
+    /// with the audio and subtitle languages chosen so far.
     func playNext() async {
-        guard let next = playback?.next else { return }
+        guard let session = playback, let next = session.next else { return }
+        let languages = session.languages
         await closePlayer()
-        play(next, fromStart: true)
+        play(next, fromStart: true, languages: languages)
     }
 
     func closePlayer() async {
@@ -157,6 +159,18 @@ final class AppModel {
         await playback.stop()
         await refresh()
     }
+}
+
+/// Audio and subtitle languages picked in the player, carried from one episode to the next.
+/// Kept for the current run of episodes only, never saved.
+struct TrackLanguages {
+    /// Subtitle choice meaning "no subtitles".
+    static let off = "off"
+
+    /// `extendedLanguageTag` of the chosen audio track; nil leaves AVFoundation's choice.
+    var audio: String?
+    /// `extendedLanguageTag` of the chosen subtitles, or `off`; nil leaves AVFoundation's choice.
+    var subtitle: String?
 }
 
 /// One playback: AVPlayer + progress reports to Jellyfin every 10 s, on pause and on stop.
@@ -187,9 +201,21 @@ final class PlaybackSession {
     /// Set by the video surface once its AVPlayerLayer exists.
     var pictureInPicture: AVPictureInPictureController?
 
-    init(item: Item, client: JellyfinClient, startTicks: Int64) {
+    /// Tracks inside the file, as AVFoundation sees them (loaded when playback starts).
+    private(set) var audioOptions: [AVMediaSelectionOption] = []
+    private(set) var subtitleOptions: [AVMediaSelectionOption] = []
+    /// Current choices; `subtitle` is nil when subtitles are off.
+    private(set) var audio: AVMediaSelectionOption?
+    private(set) var subtitle: AVMediaSelectionOption?
+    /// Languages picked in this session (or the previous episode's), for the next episode.
+    private(set) var languages: TrackLanguages
+    private var audioGroup: AVMediaSelectionGroup?
+    private var subtitleGroup: AVMediaSelectionGroup?
+
+    init(item: Item, client: JellyfinClient, startTicks: Int64, languages: TrackLanguages = TrackLanguages()) {
         self.item = item
         self.client = client
+        self.languages = languages
         player = AVPlayer(url: client.streamURL(item))
         duration = Double(item.runTimeTicks ?? 0) / 10_000_000
         time = Double(startTicks) / 10_000_000
@@ -207,6 +233,8 @@ final class PlaybackSession {
     private var isPaused: Bool { player.timeControlStatus == .paused }
 
     private func start(at ticks: Int64) async {
+        await loadTracks()
+        guard !stopped else { return }
         if ticks > 0 {
             await player.seek(to: CMTime(value: ticks, timescale: 10_000_000), toleranceBefore: .zero, toleranceAfter: .zero)
         }
@@ -221,6 +249,8 @@ final class PlaybackSession {
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     self.isPlaying = self.player.timeControlStatus != .paused
+                    // AVFoundation applies its automatic track choice once the item is ready.
+                    self.refreshTracks()
                     self.sendProgress()
                 }
             }
@@ -231,6 +261,57 @@ final class PlaybackSession {
                 if self?.next != nil { await AppModel.shared.playNext() } else { await AppModel.shared.closePlayer() }
             }
         }
+    }
+
+    // MARK: Audio and subtitles
+
+    private func loadTracks() async {
+        guard let asset = player.currentItem?.asset else { return }
+        audioGroup = try? await asset.loadMediaSelectionGroup(for: .audible)
+        subtitleGroup = try? await asset.loadMediaSelectionGroup(for: .legible)
+        audioOptions = audioGroup?.options ?? []
+        // Forced-only subtitles show by themselves when needed, they aren't a choice.
+        subtitleOptions = subtitleGroup.map {
+            AVMediaSelectionGroup.mediaSelectionOptions(from: $0.options, withoutMediaCharacteristics: [.containsOnlyForcedSubtitles])
+        } ?? []
+
+        // Same languages as the previous episode when this one has them, otherwise AVFoundation's choice.
+        if let tag = languages.audio, let audioGroup,
+           let option = audioOptions.first(where: { $0.extendedLanguageTag == tag }) {
+            player.currentItem?.select(option, in: audioGroup)
+        }
+        if let tag = languages.subtitle, let subtitleGroup {
+            if tag == TrackLanguages.off {
+                player.currentItem?.select(nil, in: subtitleGroup)
+            } else if let option = subtitleOptions.first(where: { $0.extendedLanguageTag == tag }) {
+                player.currentItem?.select(option, in: subtitleGroup)
+            }
+        }
+        refreshTracks()
+    }
+
+    /// Mirrors the item's current selection for the checkmarks.
+    private func refreshTracks() {
+        guard let selection = player.currentItem?.currentMediaSelection else { return }
+        audio = audioGroup.flatMap { selection.selectedMediaOption(in: $0) }
+        let selected = subtitleGroup.flatMap { selection.selectedMediaOption(in: $0) }
+        // A forced-only track isn't in the list: the menu shows "Off".
+        subtitle = selected.flatMap { subtitleOptions.contains($0) ? $0 : nil }
+    }
+
+    func selectAudio(_ option: AVMediaSelectionOption) {
+        guard let audioGroup else { return }
+        player.currentItem?.select(option, in: audioGroup)
+        audio = option
+        languages.audio = option.extendedLanguageTag
+    }
+
+    /// nil turns subtitles off.
+    func selectSubtitle(_ option: AVMediaSelectionOption?) {
+        guard let subtitleGroup else { return }
+        player.currentItem?.select(option, in: subtitleGroup)
+        subtitle = option
+        languages.subtitle = option == nil ? TrackLanguages.off : option?.extendedLanguageTag
     }
 
     private func tick(_ now: CMTime) {
